@@ -6,7 +6,6 @@ from zlib import crc32
 
 import click
 import requests
-import yaml
 from construct import ConstructError
 from google.protobuf.json_format import MessageToDict
 from unidecode import UnidecodeError, unidecode
@@ -266,6 +265,8 @@ def export_device(ctx: click.Context, wvd_path: Path, out_dir: Optional[Path] = 
 
     If an output directory is not specified, it will be stored in the current working directory.
     """
+    import yaml  # isort:skip
+
     if not wvd_path.is_file():
         raise click.UsageError("wvd_path: Not a path to a file, or it doesn't exist.", ctx)
 
