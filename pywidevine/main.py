@@ -6,6 +6,7 @@ from zlib import crc32
 
 import click
 import requests
+from requests.structures import CaseInsensitiveDict
 from construct import ConstructError
 from google.protobuf.json_format import MessageToDict
 from unidecode import UnidecodeError, unidecode
@@ -43,7 +44,11 @@ def main(version: bool, debug: bool) -> None:
               help="License Type to Request.")
 @click.option("-p", "--privacy", is_flag=True, default=False,
               help="Use Privacy Mode, off by default.")
-def license_(device_path: Path, pssh: PSSH, server: str, license_type: str, privacy: bool) -> None:
+@click.option("-H", "--header", nargs=2, multiple=True, type=click.Tuple([str, str]),
+              help=("Extra header, specified as 'key' 'value' pair, "
+                    "to include in License Request. "
+                    "You may specify any number of extra headers."))
+def license_(device_path: Path, pssh: PSSH, server: str, license_type: str, privacy: bool, header: tuple[tuple[str, str]]) -> None:
     """
     Make a License Request for PSSH to SERVER using DEVICE.
     It will return a list of all keys within the returned license.
@@ -99,9 +104,17 @@ def license_(device_path: Path, pssh: PSSH, server: str, license_type: str, priv
     log.info("[+] Created License Request Message (Challenge)")
     log.debug(challenge)
 
+    headers = CaseInsensitiveDict({
+       'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+       'Content-Type': 'application/octet-stream'
+    })
+    headers.update(header)
+    log.debug("Request Headers: %s", headers)
+
     # send license challenge
     license_res = requests.post(
         url=server,
+        headers=headers,
         data=challenge
     )
     if license_res.status_code != 200:
